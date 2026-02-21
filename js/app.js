@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ---- Dashboard: Routine Loading ----
     const selectRoutine = document.getElementById('routine-select');
     const btnStartSelected = document.getElementById('btn-start-selected');
+    const btnDeleteSelected = document.getElementById('btn-delete-selected');
     const txtJson = document.getElementById('routine-json');
     const txtName = document.getElementById('routine-name');
     const btnSaveJson = document.getElementById('btn-save-json');
@@ -81,10 +82,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         btnStartSelected.disabled = true;
+        btnDeleteSelected.disabled = true;
     }
 
     selectRoutine.addEventListener('change', () => {
-        btnStartSelected.disabled = !selectRoutine.value;
+        const hasSelection = !!selectRoutine.value;
+        btnStartSelected.disabled = !hasSelection;
+
+        // Prevent deleting the 2 default built-in routines
+        const isBuiltIn = selectRoutine.value === "0" || selectRoutine.value === "1";
+        btnDeleteSelected.disabled = !hasSelection || isBuiltIn;
     });
 
     btnStartSelected.addEventListener('click', () => {
@@ -93,6 +100,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const routine = storage.getRoutines()[idx];
         startWorkout(routine.name, routine.intervals);
+    });
+
+    btnDeleteSelected.addEventListener('click', () => {
+        const idx = selectRoutine.value;
+        if (!idx) return;
+
+        const routine = storage.getRoutines()[idx];
+        if (confirm(`Are you sure you want to delete ${routine.name}?`)) {
+            storage.deleteRoutine(routine.name);
+            populateRoutines();
+        }
     });
 
     // ---- Dashboard: Custom JSON ----

@@ -48,7 +48,13 @@
                         <option value="" disabled selected>Load a saved routine...</option>
                     </select>
 
-                    <h2 style="margin-top: 10px;">Voice Selection</h2>
+                    <div class="input-group">
+                        <button id="btn-start-selected" class="btn btn-primary" disabled>Start Selected</button>
+                        <button id="btn-delete-selected" class="btn btn-secondary"
+                            style="background-color: var(--accent-danger); color: white;" disabled>Delete</button>
+                    </div>
+
+                    <h2 style="margin-top: 20px;">Voice Selection</h2>
                     <select id="voice-select" class="input-modern" style="margin-bottom: 20px;">
                         <option value="default">Default Automatic Female Mode</option>
                     </select>

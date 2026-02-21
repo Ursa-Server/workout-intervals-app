@@ -18,6 +18,9 @@ class WorkoutEngine {
 
         this.selectedVoiceURI = 'default';
 
+        // Wake Lock
+        this.wakeLock = null;
+
         // UI Elements
         this.elDisplays = {
             time: document.getElementById('time-display'),
@@ -43,6 +46,33 @@ class WorkoutEngine {
         // Force load voices if they aren't loaded yet
         if (window.speechSynthesis && window.speechSynthesis.getVoices().length === 0) {
             window.speechSynthesis.getVoices();
+        }
+    }
+
+    async requestWakeLock() {
+        if ('wakeLock' in navigator) {
+            try {
+                this.wakeLock = await navigator.wakeLock.request('screen');
+                // Re-acquire if visibility changes (e.g., user minimizes and returns)
+                document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+            } catch (err) {
+                console.log(`Wake Lock Error: ${err.name}, ${err.message}`);
+            }
+        }
+    }
+
+    async releaseWakeLock() {
+        if (this.wakeLock !== null) {
+            await this.wakeLock.release()
+                .catch(err => console.log(`Wake Lock Release Error: ${err.message}`));
+            this.wakeLock = null;
+        }
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    }
+
+    async handleVisibilityChange() {
+        if (document.visibilityState === 'visible' && this.isRunning) {
+            await this.requestWakeLock();
         }
     }
 
@@ -137,6 +167,7 @@ class WorkoutEngine {
 
     start(onComplete) {
         this.initAudioContext();
+        this.requestWakeLock();
         this.onCompleteCallback = onComplete;
 
         if (this.intervals.length === 0) return;
@@ -214,8 +245,10 @@ class WorkoutEngine {
             this.isRunning = false;
             this.elDisplays.btnPause.textContent = "Resume";
             this.elDisplays.time.classList.add('paused');
+            this.releaseWakeLock();
         } else {
             this.initAudioContext(); // Ensure interaction un-suspends mobile audio
+            this.requestWakeLock();
             this.isRunning = true;
             this.elDisplays.btnPause.textContent = "Pause";
             this.elDisplays.time.classList.remove('paused');
@@ -226,6 +259,7 @@ class WorkoutEngine {
     stop() {
         clearInterval(this.timerInterval);
         this.isRunning = false;
+        this.releaseWakeLock();
         if (this.elDisplays.btnPause) {
             this.elDisplays.btnPause.textContent = "Pause";
         }
